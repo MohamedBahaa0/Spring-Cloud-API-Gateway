@@ -1,50 +1,54 @@
-# Spring API Gateway Project
+# Spring Cloud API Gateway
 
-This project showcases the setup of a Spring Cloud Gateway acting as a routing layer between multiple microservices registered with Eureka Server.
+A microservices demo where **Spring Cloud Gateway** is the single entry point in front of services registered with **Eureka**, and services call each other through **OpenFeign**.
 
-## Overview
+![Java](https://img.shields.io/badge/Java-17-orange) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.1.2-brightgreen) ![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2022.0.3-blue)
 
-The repository contains the following components:
+## Architecture
 
-1. **Eureka Server**: A service registry for registering and discovering microservices.
-2. **Spring Cloud Gateway**: A gateway that routes incoming requests to appropriate microservices based on configured predicates.
-3. **Microservice 1**: An example microservice exposing APIs.
-4. **Microservice 2**: Another example microservice that communicates with Microservice 1 using Feign Client.
+```
+client ──► API Gateway :8080 ──┬──► first-microservice  :8081   (/first/**)
+                               └──► second-microservice :8082   (/second/**) ──Feign──► first-microservice
+                 ▲
+          Eureka Server :8761 (service registry)
+```
 
-## Project Structure
+| Module | Role |
+|---|---|
+| `Eurekaserver` | Service registry where the microservices register |
+| `springcloud-gateway` | Routes requests by path predicate to the right service |
+| `first-microservice` | Sample service exposing REST endpoints |
+| `second-microservice` | Sample service that calls `first-microservice` through a Feign client |
 
-- `eurekaserver`: Contains the Eureka Server setup.
-- `api-gateway`: Includes the Spring Cloud Gateway setup with routing configuration.
-- `first-microservice`: An example microservice with exposed APIs.
-- `second-microservice`: An example microservice using Feign Client to call APIs of the first microservice.
+## Routing
 
-## How to Run
+```yaml
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: first-microservice
+          uri: http://localhost:8081/
+          predicates:
+            - Path=/first/**
+        - id: second-microservice
+          uri: http://localhost:8082/
+          predicates:
+            - Path=/second/**
+```
 
-1. Start the Eureka Server:
-    - Navigate to the `eurekaserver` directory.
-    - Run the Spring Boot application to start the Eureka Server.
+## Run locally
 
-2. Start Microservices:
-    - Navigate to `first-microservice` and `second-microservice` directories.
-    - Run the Spring Boot applications for both microservices.
+Start the modules in this order (each is a Spring Boot app):
 
-3. Start the Spring Cloud Gateway:
-    - Navigate to the `api-gateway` directory.
-    - Run the Spring Boot application for the gateway.
+1. `Eurekaserver`, dashboard at http://localhost:8761
+2. `first-microservice` and `second-microservice`
+3. `springcloud-gateway`, then call the services through http://localhost:8080/first/... and http://localhost:8080/second/...
 
-4. Access Microservices through Gateway:
-    - Use the gateway URL (default: http://localhost:8080) to access the microservices.
+```bash
+cd Eurekaserver && ./mvnw spring-boot:run
+```
 
-## Usage
+## Tech stack
 
-- Eureka Server: http://localhost:8761
-- Spring Cloud Gateway: http://localhost:8080
-- Microservice 1: http://localhost:8081
-- Microservice 2: http://localhost:8082
-
-## Additional Notes
-
-- Modify the routing configuration in `api-gateway` to suit your microservices and requirements.
-- Explore the code in each microservice directory for more insights on how they are implemented.
-
-
+Java 17 · Spring Boot 3.1.2 · Spring Cloud Gateway · Netflix Eureka · OpenFeign · Maven
